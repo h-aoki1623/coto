@@ -1,0 +1,38 @@
+# history-empty-state.yaml
+# Verifies the History List screen shows the correct empty state
+# when no conversations have been completed yet.
+#
+# Precondition: No prior conversations in the app's history.
+# If the backend returns history items, the empty state will not appear
+# and this flow will fail. Run on a fresh install or cleared state.
+appId: com.coto.app
+---
+# Launch the application
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to the History List screen
+- tapOn:
+    id: "View conversation history"
+
+# Wait for the screen to load (may include a network request)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "No Conversations Yet|トーク履歴"
+    timeout: 10000
+
+# Verify empty state title
+- assertVisible:
+    text: "No Conversations Yet"
+
+# Verify empty state subtitle with guidance
+- assertVisible:
+    text: "Start a conversation from the home screen"
+
+# Verify the chat bubble emoji icon is shown in the empty state
+- assertVisible:
+    text: "💬"
+
+# Capture evidence of the empty state
+- takeScreenshot: "history-empty-state"

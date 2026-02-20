@@ -1,0 +1,34 @@
+# home-topic-cards.yaml
+# Verifies all 5 topic cards are visible on the Home screen and the
+# history button is accessible. Does NOT tap any cards.
+#
+# Expected result: All topic labels and the history button are rendered.
+appId: com.coto.app
+---
+# Launch the application
+- launchApp
+
+# Wait for the Home screen to fully render
+- waitForAnimationToEnd
+
+# Verify all 5 topic card labels are visible
+- assertVisible:
+    text: "スポーツ"
+- assertVisible:
+    text: "ビジネス"
+- assertVisible:
+    text: "政治"
+- assertVisible:
+    text: "テクノロジー"
+- assertVisible:
+    text: "エンタメ"
+
+# Verify the history button is present (accessibility label)
+- assertVisible:
+    id: "View conversation history"
+
+# Verify the TOPICS section label
+- assertVisible: "TOPICS"
+
+# Capture evidence of all topic cards
+- takeScreenshot: "home-topic-cards-all"

@@ -1,0 +1,42 @@
+# navigate-to-history.yaml
+# Verifies navigation from the Home screen to the History List screen
+# by tapping the history button, then navigating back to Home.
+#
+# Note: If there are no past conversations, the empty state will be shown.
+# This flow accepts either the header title or the empty state as valid.
+appId: com.coto.app
+---
+# Launch the application
+- launchApp
+- waitForAnimationToEnd
+
+# Verify we start on the Home screen
+- assertVisible:
+    text: "こんにちは"
+
+# Tap the history button using its accessibility label
+- tapOn:
+    id: "View conversation history"
+
+# Wait for the History List screen to load
+- waitForAnimationToEnd
+
+# Verify the History List screen header is shown
+- assertVisible:
+    text: "トーク履歴"
+
+# Capture evidence of the history screen
+- takeScreenshot: "history-list-screen"
+
+# Navigate back to Home screen using the back button
+- back
+
+# Wait for transition back
+- waitForAnimationToEnd
+
+# Verify we returned to the Home screen
+- assertVisible:
+    text: "こんにちは"
+
+# Capture evidence of successful round-trip navigation
+- takeScreenshot: "back-to-home-from-history"

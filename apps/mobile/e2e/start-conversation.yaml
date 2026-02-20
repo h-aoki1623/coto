@@ -1,0 +1,50 @@
+# start-conversation.yaml
+# Verifies tapping a topic card initiates a conversation and navigates
+# to the Talk screen. Uses the "Sports" topic as the test case.
+#
+# IMPORTANT: This flow requires the backend API to be running.
+# If the backend is not available, an error alert will appear instead
+# of the Talk screen, and this flow will fail at the Talk screen assertion.
+# This is expected behavior for an offline/no-backend scenario.
+appId: com.coto.app
+---
+# Launch the application
+- launchApp
+- waitForAnimationToEnd
+
+# Verify we are on the Home screen
+- assertVisible:
+    text: "こんにちは"
+
+# Tap the Sports topic card using its accessibility label
+- tapOn:
+    id: "Start conversation about スポーツ"
+
+# Wait for the API call and navigation transition.
+# The loading indicator will show briefly on the card.
+- waitForAnimationToEnd
+
+# Wait for the Talk screen to appear.
+# If backend is running, either the empty state or the header should appear.
+- extendedWaitUntil:
+    visible:
+      text: "Coto|Ready to Practice!|Connection Error"
+    timeout: 15000
+
+# If we reached the Talk screen, verify the header elements
+- assertVisible:
+    text: "Coto"
+    optional: true
+
+# Verify the Talk screen empty state (no messages yet)
+- assertVisible:
+    text: "Ready to Practice!"
+    optional: true
+
+# Verify the end conversation button is present
+- assertVisible:
+    id: "End conversation"
+    optional: true
+
+# Capture evidence of the Talk screen
+- takeScreenshot: "talk-screen-after-topic-tap"

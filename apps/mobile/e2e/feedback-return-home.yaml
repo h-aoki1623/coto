@@ -1,0 +1,112 @@
+# feedback-return-home.yaml
+# Verifies the full conversation lifecycle: start a topic, end the
+# conversation, view feedback, and return to the home screen.
+#
+# PREREQUISITES:
+# - Backend API must be running and reachable
+# - A conversation must be started and completed to reach the Feedback screen
+#
+# This flow performs the complete journey:
+# 1. Home -> tap topic -> Talk screen
+# 2. Talk screen -> end conversation -> completion state
+# 3. Completion state -> tap "View feedback" -> Feedback screen
+# 4. Feedback screen -> tap "Back to home" -> Home screen
+#
+# NOTE: This is an advanced flow that depends on backend availability
+# and may need longer timeouts for API responses. If the backend is not
+# running, the flow will fail at the topic tap step.
+appId: com.coto.app
+---
+# -- Step 1: Launch and start a conversation --
+
+- launchApp
+- waitForAnimationToEnd
+
+# Verify Home screen
+- assertVisible:
+    text: "こんにちは"
+
+# Start a conversation on the Sports topic
+- tapOn:
+    id: "Start conversation about スポーツ"
+
+# Wait for API call and navigation
+- extendedWaitUntil:
+    visible:
+      text: "Coto"
+    timeout: 15000
+
+# Verify the Talk screen loaded
+- assertVisible:
+    text: "Coto"
+- takeScreenshot: "feedback-flow-01-talk-screen"
+
+# -- Step 2: End the conversation --
+
+# Tap the end button
+- tapOn:
+    id: "End conversation"
+
+# An Alert dialog will appear asking for confirmation
+# Tap "End" to confirm
+- tapOn: "End"
+
+# Wait for the API call to complete and the completion footer to appear
+- extendedWaitUntil:
+    visible:
+      text: "トーク終了"
+    timeout: 15000
+
+# Verify the completion state is shown
+- assertVisible:
+    text: "トーク終了"
+- assertVisible:
+    text: "フィードバックを見る"
+- takeScreenshot: "feedback-flow-02-conversation-ended"
+
+# -- Step 3: Navigate to Feedback screen --
+
+# Tap the "View feedback" button
+- tapOn:
+    id: "View feedback"
+
+# Wait for the Feedback screen to load (includes API call for feedback data)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "フィードバック|Loading feedback"
+    timeout: 15000
+
+# Verify Feedback screen header
+- assertVisible:
+    text: "フィードバック"
+
+# Verify stats labels are present
+- assertVisible:
+    text: "やりとり"
+- assertVisible:
+    text: "添削"
+- assertVisible:
+    text: "訂正なし"
+
+# Verify the "Back to home" button is present
+- assertVisible:
+    text: "ホームに戻る"
+
+- takeScreenshot: "feedback-flow-03-feedback-screen"
+
+# -- Step 4: Return to Home screen --
+
+# Tap the "Back to home" button
+- tapOn:
+    id: "Go back to home screen"
+
+# Wait for navigation back to Home
+- waitForAnimationToEnd
+
+# Verify we are back on the Home screen
+- assertVisible:
+    text: "こんにちは"
+- assertVisible: "TOPICS"
+
+- takeScreenshot: "feedback-flow-04-returned-home"

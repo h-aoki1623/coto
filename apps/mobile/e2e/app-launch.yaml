@@ -1,0 +1,29 @@
+# app-launch.yaml
+# Verifies the app launches successfully and the Home screen is fully rendered
+# with the greeting text, subtitle, and TOPICS section header.
+#
+# Expected result: Home screen visible with Japanese greeting and topic section.
+appId: com.coto.app
+---
+# Launch the application
+- launchApp
+
+# Wait for the Home screen to fully render
+- waitForAnimationToEnd
+
+# Verify the CO logo text is present in the header
+- assertVisible: "CO"
+
+# Verify the Japanese greeting is displayed
+- assertVisible:
+    text: "こんにちは"
+
+# Verify the subtitle prompt
+- assertVisible:
+    text: "今日は何について話す？"
+
+# Verify the TOPICS section label is visible
+- assertVisible: "TOPICS"
+
+# Capture evidence of successful launch
+- takeScreenshot: "home-screen-launch"
