@@ -6,12 +6,14 @@ from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
-from coto.dependencies import get_db, get_device_id
+from coto.dependencies import get_current_user, get_db
+from coto.models.user import User
 from coto.schemas.conversation import (
     ConversationResponse,
     CreateConversationRequest,
 )
 from coto.schemas.correction import TurnCorrectionResponse
+from coto.services.conversation import ConversationService
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
@@ -19,23 +21,26 @@ router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 @router.post("", response_model=ConversationResponse, status_code=201)
 async def create_conversation(
     body: CreateConversationRequest,
-    device_id: str = Depends(get_device_id),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ConversationResponse:
     """Start a new conversation session.
 
     Requires X-Device-Id header for user identification.
     """
-    # TODO: resolve or create user from device_id
-    # TODO: delegate to ConversationService.start_conversation
-    raise NotImplementedError
+    service = ConversationService(db)
+    conversation = await service.start_conversation(
+        user_id=user.id,
+        topic=body.topic,
+    )
+    return ConversationResponse.model_validate(conversation)
 
 
 @router.post("/{conversation_id}/turns")
 async def submit_turn(
     conversation_id: uuid.UUID,
     audio: UploadFile,
-    device_id: str = Depends(get_device_id),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> EventSourceResponse:
     """Submit a user audio turn and receive SSE events.
@@ -44,55 +49,59 @@ async def submit_turn(
     with events for: user_transcript, ai_reply_chunk, ai_reply_complete,
     correction_result, tts_audio_url, turn_complete.
     """
-    # TODO: read audio bytes from upload
-    # TODO: delegate to TurnOrchestrator.process_turn
-    # TODO: return EventSourceResponse wrapping the async generator
+    # Step 4: will be implemented with the turn orchestrator
     raise NotImplementedError
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
 async def get_conversation(
     conversation_id: uuid.UUID,
-    device_id: str = Depends(get_device_id),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ConversationResponse:
     """Retrieve a conversation by ID."""
-    # TODO: delegate to ConversationService.get_conversation
-    raise NotImplementedError
+    service = ConversationService(db)
+    conversation = await service.get_conversation(conversation_id)
+    return ConversationResponse.model_validate(conversation)
 
 
-@router.get("/{conversation_id}/feedback", response_model=list[TurnCorrectionResponse])
+@router.get(
+    "/{conversation_id}/feedback",
+    response_model=list[TurnCorrectionResponse],
+)
 async def get_feedback(
     conversation_id: uuid.UUID,
-    device_id: str = Depends(get_device_id),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[TurnCorrectionResponse]:
     """Get all corrections/feedback for a completed conversation.
 
     Returns a list of turn-level corrections with individual items.
     """
-    # TODO: fetch all turns with corrections for this conversation
-    # TODO: build and return TurnCorrectionResponse list
-    raise NotImplementedError
+    service = ConversationService(db)
+    corrections = await service.get_feedback(conversation_id)
+    return [TurnCorrectionResponse.model_validate(c) for c in corrections]
 
 
 @router.post("/{conversation_id}/end", response_model=ConversationResponse)
 async def end_conversation(
     conversation_id: uuid.UUID,
-    device_id: str = Depends(get_device_id),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ConversationResponse:
     """End an active conversation and compute final metrics."""
-    # TODO: delegate to ConversationService.end_conversation
-    raise NotImplementedError
+    service = ConversationService(db)
+    conversation = await service.end_conversation(conversation_id)
+    return ConversationResponse.model_validate(conversation)
 
 
 @router.post("/{conversation_id}/resume", response_model=ConversationResponse)
 async def resume_conversation(
     conversation_id: uuid.UUID,
-    device_id: str = Depends(get_device_id),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ConversationResponse:
     """Resume a paused conversation."""
-    # TODO: delegate to ConversationService.resume_conversation
-    raise NotImplementedError
+    service = ConversationService(db)
+    conversation = await service.resume_conversation(conversation_id)
+    return ConversationResponse.model_validate(conversation)

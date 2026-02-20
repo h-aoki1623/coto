@@ -33,7 +33,7 @@ class ConversationRepository:
 
     async def get_by_id(self, conversation_id: uuid.UUID) -> Conversation | None:
         """Fetch a conversation by its primary key."""
-        raise NotImplementedError
+        return await self._session.get(Conversation, conversation_id)
 
     async def update_status(
         self,
@@ -41,7 +41,12 @@ class ConversationRepository:
         status: str,
     ) -> Conversation | None:
         """Transition a conversation to a new status."""
-        raise NotImplementedError
+        conversation = await self._session.get(Conversation, conversation_id)
+        if conversation is None:
+            return None
+        conversation.status = status
+        await self._session.flush()
+        return conversation
 
     async def update_on_end(
         self,
@@ -54,4 +59,13 @@ class ConversationRepository:
         score: float | None,
     ) -> Conversation | None:
         """Finalize a conversation with end-of-session metrics."""
-        raise NotImplementedError
+        conversation = await self._session.get(Conversation, conversation_id)
+        if conversation is None:
+            return None
+        conversation.status = status
+        conversation.ended_at = ended_at
+        conversation.duration_seconds = duration_seconds
+        conversation.total_corrections = total_corrections
+        conversation.score = score
+        await self._session.flush()
+        return conversation

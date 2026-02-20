@@ -21,6 +21,14 @@ class User(BaseModel):
 
     __tablename__ = "users"
 
+    device_id: Mapped[str] = mapped_column(
+        String(36),
+        unique=True,
+        nullable=False,
+        index=True,
+        comment="Client-generated UUID from X-Device-Id header",
+    )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

@@ -2,6 +2,7 @@
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from coto.models.turn import Turn
@@ -41,4 +42,6 @@ class TurnRepository:
         conversation_id: uuid.UUID,
     ) -> list[Turn]:
         """Fetch all turns for a conversation, ordered by sequence."""
-        raise NotImplementedError
+        stmt = select(Turn).where(Turn.conversation_id == conversation_id).order_by(Turn.sequence)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())

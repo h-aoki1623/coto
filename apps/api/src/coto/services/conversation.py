@@ -1,11 +1,21 @@
 """Service layer for conversation lifecycle management."""
 
 import uuid
+from datetime import UTC, datetime
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from coto.exceptions import ConversationStateError, NotFoundError, ValidationError
 from coto.models.conversation import Conversation
+from coto.models.correction import TurnCorrection
+from coto.models.turn import Turn
 from coto.repositories.conversation import ConversationRepository
+
+ALLOWED_TOPICS: frozenset[str] = frozenset(
+    {"sports", "business", "technology", "politics", "entertainment"}
+)
 
 
 class ConversationService:
@@ -27,14 +37,30 @@ class ConversationService:
         Validates the topic, creates the conversation record,
         and returns the newly created conversation.
         """
-        # TODO: validate topic against allowed values
-        # TODO: check if user already has an active conversation
+        if topic not in ALLOWED_TOPICS:
+            raise ValidationError(
+                f"Invalid topic '{topic}'. Allowed: {', '.join(sorted(ALLOWED_TOPICS))}"
+            )
+
         conversation = await self._repo.create(
             user_id=user_id,
             topic=topic,
             time_limit_seconds=time_limit_seconds,
         )
         await self._session.commit()
+        return conversation
+
+    async def get_conversation(
+        self,
+        conversation_id: uuid.UUID,
+    ) -> Conversation:
+        """Retrieve a conversation by ID.
+
+        Raises NotFoundError if the conversation does not exist.
+        """
+        conversation = await self._repo.get_by_id(conversation_id)
+        if conversation is None:
+            raise NotFoundError("Conversation", str(conversation_id))
         return conversation
 
     async def end_conversation(
@@ -46,23 +72,38 @@ class ConversationService:
         Transitions status to 'completed', calculates duration,
         tallies corrections, and optionally computes a score.
         """
-        # TODO: fetch conversation, validate it is active/paused
-        # TODO: calculate duration_seconds from started_at to now
-        # TODO: count total corrections across all turns
-        # TODO: compute score (optional, LLM-based)
-        # TODO: call repo.update_on_end(...)
-        raise NotImplementedError
+        conversation = await self._repo.get_by_id(conversation_id)
+        if conversation is None:
+            raise NotFoundError("Conversation", str(conversation_id))
 
-    async def get_conversation(
-        self,
-        conversation_id: uuid.UUID,
-    ) -> Conversation:
-        """Retrieve a conversation by ID.
+        if conversation.status not in ("active", "paused"):
+            raise ConversationStateError(
+                f"Cannot end conversation in '{conversation.status}' status. "
+                "Only 'active' or 'paused' conversations can be ended."
+            )
 
-        Raises NotFoundError if the conversation does not exist.
-        """
-        # TODO: fetch and return, raise NotFoundError on None
-        raise NotImplementedError
+        now = datetime.now(UTC)
+        duration_seconds = int((now - conversation.started_at).total_seconds())
+
+        # Count turns that have corrections
+        corrections_stmt = select(Turn.id).where(
+            Turn.conversation_id == conversation_id,
+            Turn.correction_status == "has_corrections",
+        )
+        result = await self._session.execute(corrections_stmt)
+        total_corrections = len(result.all())
+
+        conversation = await self._repo.update_on_end(
+            conversation_id,
+            status="completed",
+            ended_at=now,
+            duration_seconds=duration_seconds,
+            total_corrections=total_corrections,
+            score=None,
+        )
+        await self._session.commit()
+        # update_on_end already checked for None via get_by_id above
+        return conversation  # type: ignore[return-value]
 
     async def resume_conversation(
         self,
@@ -73,6 +114,43 @@ class ConversationService:
         Transitions status from 'paused' back to 'active'.
         Raises ConversationStateError if not in 'paused' status.
         """
-        # TODO: fetch conversation, validate status == 'paused'
-        # TODO: update status to 'active'
-        raise NotImplementedError
+        conversation = await self._repo.get_by_id(conversation_id)
+        if conversation is None:
+            raise NotFoundError("Conversation", str(conversation_id))
+
+        if conversation.status != "paused":
+            raise ConversationStateError(
+                f"Cannot resume conversation in '{conversation.status}' status. "
+                "Only 'paused' conversations can be resumed."
+            )
+
+        conversation = await self._repo.update_status(conversation_id, "active")
+        await self._session.commit()
+        return conversation  # type: ignore[return-value]
+
+    async def get_feedback(
+        self,
+        conversation_id: uuid.UUID,
+    ) -> list[TurnCorrection]:
+        """Retrieve all corrections for turns in a conversation.
+
+        Returns a list of TurnCorrection objects with eagerly loaded items,
+        filtered to only turns that have corrections.
+        """
+        # Verify conversation exists
+        conversation = await self._repo.get_by_id(conversation_id)
+        if conversation is None:
+            raise NotFoundError("Conversation", str(conversation_id))
+
+        stmt = (
+            select(TurnCorrection)
+            .join(Turn, TurnCorrection.turn_id == Turn.id)
+            .where(
+                Turn.conversation_id == conversation_id,
+                Turn.correction_status == "has_corrections",
+            )
+            .options(selectinload(TurnCorrection.items))
+            .order_by(Turn.sequence)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
