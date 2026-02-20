@@ -1,5 +1,6 @@
 """Conversation and turn endpoints."""
 
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, UploadFile
@@ -7,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from coto.dependencies import get_current_user, get_db
+from coto.exceptions import ConversationStateError
 from coto.models.user import User
 from coto.schemas.conversation import (
     ConversationResponse,
@@ -14,6 +16,7 @@ from coto.schemas.conversation import (
 )
 from coto.schemas.correction import TurnCorrectionResponse
 from coto.services.conversation import ConversationService
+from coto.services.turn_orchestrator import TurnOrchestrator
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
@@ -46,11 +49,30 @@ async def submit_turn(
     """Submit a user audio turn and receive SSE events.
 
     Accepts multipart audio file upload. Returns a streaming SSE response
-    with events for: user_transcript, ai_reply_chunk, ai_reply_complete,
+    with events for: stt_result, ai_response_chunk, ai_response_done,
     correction_result, tts_audio_url, turn_complete.
     """
-    # Step 4: will be implemented with the turn orchestrator
-    raise NotImplementedError
+    # Verify conversation exists and is active
+    service = ConversationService(db)
+    conversation = await service.get_conversation(conversation_id)
+    if conversation.status != "active":
+        raise ConversationStateError(
+            f"Cannot submit turn to conversation in '{conversation.status}' status. "
+            "Only 'active' conversations accept new turns."
+        )
+
+    audio_data = await audio.read()
+    orchestrator = TurnOrchestrator(db)
+
+    async def event_generator():
+        async for event in orchestrator.process_turn(
+            conversation_id=conversation_id,
+            user_id=user.id,
+            audio_data=audio_data,
+        ):
+            yield {"event": event["event"], "data": json.dumps(event["data"])}
+
+    return EventSourceResponse(event_generator())
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
