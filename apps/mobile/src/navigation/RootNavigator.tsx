@@ -1,66 +1,72 @@
+import { StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet } from 'react-native';
+import { Colors } from '@/constants/colors';
+import { HomeScreen } from '@/features/home/HomeScreen';
+import { TalkScreen } from '@/features/talk/TalkScreen';
+import { FeedbackScreen } from '@/features/feedback/FeedbackScreen';
+import { HistoryListScreen } from '@/features/history/HistoryListScreen';
+import { HistoryDetailScreen } from '@/features/history/HistoryDetailScreen';
+import { OfflineScreen } from '@/features/offline/OfflineScreen';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Placeholder screens (will be replaced by feature modules)
-function HomeScreen() {
-  return (
-    <View style={styles.center}>
-      <Text>Home</Text>
-    </View>
-  );
-}
-
-function TalkScreen() {
-  return (
-    <View style={styles.center}>
-      <Text>Talk</Text>
-    </View>
-  );
-}
-
-function FeedbackScreen() {
-  return (
-    <View style={styles.center}>
-      <Text>Feedback</Text>
-    </View>
-  );
-}
-
-function HistoryListScreen() {
-  return (
-    <View style={styles.center}>
-      <Text>History</Text>
-    </View>
-  );
-}
-
-function HistoryDetailScreen() {
-  return (
-    <View style={styles.center}>
-      <Text>History Detail</Text>
-    </View>
-  );
-}
-
 export function RootNavigator() {
+  const isOnline = useNetworkStatus();
+
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Coto' }} />
-      <Stack.Screen name="Talk" component={TalkScreen} />
-      <Stack.Screen name="Feedback" component={FeedbackScreen} />
-      <Stack.Screen name="HistoryList" component={HistoryListScreen} options={{ title: 'History' }} />
-      <Stack.Screen name="HistoryDetail" component={HistoryDetailScreen} options={{ title: 'Detail' }} />
-    </Stack.Navigator>
+    <>
+      <Stack.Navigator
+        screenOptions={{
+          headerBackButtonDisplayMode: 'minimal',
+          headerTintColor: Colors.textPrimary,
+          headerStyle: { backgroundColor: Colors.cardBackground },
+          headerTitleStyle: styles.headerTitle,
+          headerShadowVisible: false,
+        }}
+      >
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Talk"
+          component={TalkScreen}
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="Feedback"
+          component={FeedbackScreen}
+          options={{
+            title: 'フィードバック',
+            gestureEnabled: false,
+            headerBackVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="HistoryList"
+          component={HistoryListScreen}
+          options={{ title: 'トーク履歴' }}
+        />
+        <Stack.Screen
+          name="HistoryDetail"
+          component={HistoryDetailScreen}
+          options={{ title: '' }}
+        />
+      </Stack.Navigator>
+
+      {/* Offline overlay - shown on top of everything when network is disconnected */}
+      {!isOnline ? <OfflineScreen /> : null}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
 });

@@ -20,6 +20,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-secure-store',
+    [
+      'expo-av',
+      {
+        microphonePermission: 'Allow Coto to access your microphone for English conversation practice.',
+      },
+    ],
   ],
   extra: {
     apiBaseUrl: process.env.API_BASE_URL ?? 'http://localhost:8000',
