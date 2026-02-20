@@ -16,6 +16,7 @@ export type TurnEvent =
   | { type: 'error'; data: { code: string; message: string } };
 
 export interface TurnCorrectionEventData {
+  turnId: string;
   correctedText: string;
   explanation: string;
   items: Array<{

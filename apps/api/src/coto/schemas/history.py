@@ -3,14 +3,15 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from coto.schemas.base import CamelModel
 from coto.schemas.conversation import ConversationResponse
 from coto.schemas.correction import TurnCorrectionResponse
 from coto.schemas.turn import TurnResponse
 
 
-class HistoryListItem(BaseModel):
+class HistoryListItem(CamelModel):
     """Summary item for the conversation history list."""
 
     id: uuid.UUID
@@ -21,29 +22,24 @@ class HistoryListItem(BaseModel):
     duration_seconds: int | None
     total_corrections: int
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class HistoryListResponse(BaseModel):
+class HistoryListResponse(CamelModel):
     """Paginated list of conversation history items."""
 
     items: list[HistoryListItem]
     total: int
-
-
-class TurnWithCorrection(TurnResponse):
-    """Turn response extended with optional correction data."""
-
-    correction: TurnCorrectionResponse | None = None
+    page: int
+    per_page: int
 
 
 class HistoryDetailResponse(ConversationResponse):
     """Detailed conversation history with turns and corrections."""
 
-    turns: list[TurnWithCorrection] = Field(default_factory=list)
+    turns: list[TurnResponse] = Field(default_factory=list)
+    corrections: list[TurnCorrectionResponse] = Field(default_factory=list)
 
 
-class BatchDeleteRequest(BaseModel):
+class BatchDeleteRequest(CamelModel):
     """Request body for batch-deleting conversations."""
 
     ids: list[uuid.UUID] = Field(..., min_length=1, max_length=100)

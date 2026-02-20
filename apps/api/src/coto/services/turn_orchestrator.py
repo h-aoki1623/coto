@@ -78,6 +78,7 @@ class TurnOrchestrator:
         conversation_id: uuid.UUID,
         user_id: uuid.UUID,
         audio_data: bytes,
+        audio_filename: str = "audio.m4a",
     ) -> AsyncIterator[dict[str, Any]]:
         """Process a user turn and yield SSE event dicts.
 
@@ -85,6 +86,7 @@ class TurnOrchestrator:
             conversation_id: The conversation this turn belongs to.
             user_id: The user who submitted the turn.
             audio_data: Raw audio bytes from the client.
+            audio_filename: Original filename of the uploaded audio.
 
         Yields:
             Dicts with "event" and "data" keys for SSE formatting.
@@ -96,7 +98,7 @@ class TurnOrchestrator:
         log.info("turn_pipeline_start")
 
         # -- Step 1: STT transcription ------------------------------------
-        user_text = await self._stt.transcribe(audio_data)
+        user_text = await self._stt.transcribe(audio_data, filename=audio_filename)
         yield _make_event("stt_result", {"text": user_text})
 
         # -- Step 2: Save user turn to DB ---------------------------------
@@ -154,15 +156,15 @@ class TurnOrchestrator:
         # Yield correction result
         if turn_correction is not None:
             correction_result = {
-                "turn_id": str(user_turn.id),
-                "corrected_text": turn_correction.corrected_text,
+                "turnId": str(user_turn.id),
+                "correctedText": turn_correction.corrected_text,
                 "explanation": turn_correction.explanation,
                 "items": [
                     {
                         "original": item.original,
                         "corrected": item.corrected,
-                        "original_sentence": item.original_sentence,
-                        "corrected_sentence": item.corrected_sentence,
+                        "originalSentence": item.original_sentence,
+                        "correctedSentence": item.corrected_sentence,
                         "type": item.type,
                         "explanation": item.explanation,
                     }

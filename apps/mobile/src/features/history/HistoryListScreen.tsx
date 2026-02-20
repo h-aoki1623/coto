@@ -24,16 +24,16 @@ interface HistoryItem {
   id: string;
   topic: string;
   status: string;
-  duration_seconds: number | null;
-  started_at: string;
-  total_corrections: number;
+  durationSeconds: number | null;
+  startedAt: string;
+  totalCorrections: number;
 }
 
 interface HistoryListResponse {
   items: HistoryItem[];
   total: number;
   page: number;
-  per_page: number;
+  perPage: number;
 }
 
 interface SectionData {
@@ -79,7 +79,7 @@ function groupByDate(items: HistoryItem[]): SectionData[] {
   const sections: Map<string, HistoryItem[]> = new Map();
 
   for (const item of items) {
-    const title = getSectionTitle(item.started_at);
+    const title = getSectionTitle(item.startedAt);
     const existing = sections.get(title);
     if (existing) {
       existing.push(item);
@@ -179,7 +179,7 @@ function HistoryRow({ item, onPress, onDelete }: HistoryRowProps) {
           onPress={handlePress}
           onLongPress={handleLongPress}
           accessibilityRole="button"
-          accessibilityLabel={`${topicLabel} conversation, ${formatDuration(item.duration_seconds)}, ${item.total_corrections} corrections`}
+          accessibilityLabel={`${topicLabel} conversation, ${formatDuration(item.durationSeconds)}, ${item.totalCorrections} corrections`}
         >
           <View style={styles.rowLeft}>
             <View style={[styles.topicIcon, { backgroundColor: iconBg }]}>
@@ -188,15 +188,15 @@ function HistoryRow({ item, onPress, onDelete }: HistoryRowProps) {
             <View style={styles.rowInfo}>
               <Text style={styles.rowTopic}>{topicLabel}</Text>
               <Text style={styles.rowMeta}>
-                {formatDuration(item.duration_seconds)} · {formatTime(item.started_at)}
+                {formatDuration(item.durationSeconds)} · {formatTime(item.startedAt)}
               </Text>
             </View>
           </View>
           <View style={styles.rowRight}>
-            {item.total_corrections > 0 ? (
+            {item.totalCorrections > 0 ? (
               <View style={styles.correctionBadge}>
                 <Text style={styles.correctionBadgeText}>
-                  {item.total_corrections}
+                  {item.totalCorrections}
                 </Text>
               </View>
             ) : null}

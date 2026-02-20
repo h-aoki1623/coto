@@ -14,7 +14,7 @@ from coto.schemas.conversation import (
     ConversationResponse,
     CreateConversationRequest,
 )
-from coto.schemas.correction import TurnCorrectionResponse
+from coto.schemas.correction import FeedbackResponse, TurnCorrectionResponse
 from coto.services.conversation import ConversationService
 from coto.services.turn_orchestrator import TurnOrchestrator
 
@@ -62,6 +62,7 @@ async def submit_turn(
         )
 
     audio_data = await audio.read()
+    audio_filename = audio.filename or "audio.m4a"
     orchestrator = TurnOrchestrator(db)
 
     async def event_generator():
@@ -69,6 +70,7 @@ async def submit_turn(
             conversation_id=conversation_id,
             user_id=user.id,
             audio_data=audio_data,
+            audio_filename=audio_filename,
         ):
             yield {"event": event["event"], "data": json.dumps(event["data"])}
 
@@ -89,20 +91,27 @@ async def get_conversation(
 
 @router.get(
     "/{conversation_id}/feedback",
-    response_model=list[TurnCorrectionResponse],
+    response_model=FeedbackResponse,
 )
 async def get_feedback(
     conversation_id: uuid.UUID,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> list[TurnCorrectionResponse]:
-    """Get all corrections/feedback for a completed conversation.
+) -> FeedbackResponse:
+    """Get feedback summary with corrections for a completed conversation.
 
-    Returns a list of turn-level corrections with individual items.
+    Returns total turn counts and a list of turn-level corrections.
     """
     service = ConversationService(db)
-    corrections = await service.get_feedback(conversation_id)
-    return [TurnCorrectionResponse.model_validate(c) for c in corrections]
+    stats = await service.get_feedback_with_stats(conversation_id)
+    return FeedbackResponse(
+        total_turns=stats.total_turns,
+        total_corrections=stats.total_corrections,
+        total_clean=stats.total_clean,
+        corrections=[
+            TurnCorrectionResponse.model_validate(c) for c in stats.corrections
+        ],
+    )
 
 
 @router.post("/{conversation_id}/end", response_model=ConversationResponse)

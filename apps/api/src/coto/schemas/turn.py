@@ -3,10 +3,10 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from coto.schemas.base import CamelModel
 
 
-class TurnResponse(BaseModel):
+class TurnResponse(CamelModel):
     """Response schema for a single conversation turn."""
 
     id: uuid.UUID
@@ -17,5 +17,3 @@ class TurnResponse(BaseModel):
     sequence: int
     correction_status: str
     created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)

@@ -1,9 +1,10 @@
 """Service layer for conversation lifecycle management."""
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,6 +17,16 @@ from coto.repositories.conversation import ConversationRepository
 ALLOWED_TOPICS: frozenset[str] = frozenset(
     {"sports", "business", "technology", "politics", "entertainment"}
 )
+
+
+@dataclass(frozen=True)
+class FeedbackStats:
+    """Immutable result of feedback computation for a conversation."""
+
+    total_turns: int
+    total_corrections: int
+    total_clean: int
+    corrections: list[TurnCorrection]
 
 
 class ConversationService:
@@ -154,3 +165,32 @@ class ConversationService:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_feedback_with_stats(
+        self,
+        conversation_id: uuid.UUID,
+    ) -> FeedbackStats:
+        """Get feedback with summary statistics for a conversation.
+
+        Returns an immutable FeedbackStats containing total turn counts,
+        corrections, and clean turns alongside the correction details.
+        """
+        corrections = await self.get_feedback(conversation_id)
+
+        # Count total user turns for this conversation
+        total_turns_stmt = select(func.count(Turn.id)).where(
+            Turn.conversation_id == conversation_id,
+            Turn.role == "user",
+        )
+        result = await self._session.execute(total_turns_stmt)
+        total_user_turns = result.scalar() or 0
+
+        total_corrections = len(corrections)
+        total_clean = total_user_turns - total_corrections
+
+        return FeedbackStats(
+            total_turns=total_user_turns,
+            total_corrections=total_corrections,
+            total_clean=total_clean,
+            corrections=corrections,
+        )

@@ -9,12 +9,14 @@ from coto.dependencies import get_current_user, get_db
 from coto.exceptions import NotFoundError
 from coto.models.user import User
 from coto.repositories.history import HistoryRepository
+from coto.schemas.correction import TurnCorrectionResponse
 from coto.schemas.history import (
     BatchDeleteRequest,
     HistoryDetailResponse,
     HistoryListItem,
     HistoryListResponse,
 )
+from coto.schemas.turn import TurnResponse
 
 router = APIRouter(prefix="/api/history", tags=["history"])
 
@@ -23,18 +25,21 @@ router = APIRouter(prefix="/api/history", tags=["history"])
 async def list_history(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    offset: int = Query(0, ge=0, description="Pagination offset"),
-    limit: int = Query(20, ge=1, le=100, description="Page size"),
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(20, ge=1, le=100, description="Items per page"),
 ) -> HistoryListResponse:
     """List conversation history for the current user.
 
-    Supports pagination via offset and limit query parameters.
+    Supports pagination via page and per_page query parameters.
     """
+    offset = (page - 1) * per_page
     repo = HistoryRepository(db)
-    items, total = await repo.get_list_by_device_id(user.id, offset=offset, limit=limit)
+    items, total = await repo.get_list_by_device_id(user.id, offset=offset, limit=per_page)
     return HistoryListResponse(
         items=[HistoryListItem.model_validate(c) for c in items],
         total=total,
+        page=page,
+        per_page=per_page,
     )
 
 
@@ -49,7 +54,27 @@ async def get_history_detail(
     conversation = await repo.get_detail(conversation_id, user.id)
     if conversation is None:
         raise NotFoundError("Conversation", str(conversation_id))
-    return HistoryDetailResponse.model_validate(conversation)
+
+    # Build turns and corrections as separate lists
+    turns: list[TurnResponse] = []
+    corrections: list[TurnCorrectionResponse] = []
+    for turn in conversation.turns:
+        turns.append(TurnResponse.model_validate(turn))
+        if turn.correction is not None:
+            corrections.append(TurnCorrectionResponse.model_validate(turn.correction))
+
+    return HistoryDetailResponse(
+        id=conversation.id,
+        topic=conversation.topic,
+        status=conversation.status,
+        duration_seconds=conversation.duration_seconds,
+        time_limit_seconds=conversation.time_limit_seconds,
+        started_at=conversation.started_at,
+        ended_at=conversation.ended_at,
+        total_corrections=conversation.total_corrections,
+        turns=turns,
+        corrections=corrections,
+    )
 
 
 @router.delete("/{conversation_id}", status_code=204)

@@ -2,10 +2,10 @@
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from coto.schemas.base import CamelModel
 
 
-class CorrectionItemResponse(BaseModel):
+class CorrectionItemResponse(CamelModel):
     """Response schema for a single correction item."""
 
     id: uuid.UUID
@@ -16,10 +16,8 @@ class CorrectionItemResponse(BaseModel):
     type: str
     explanation: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class TurnCorrectionResponse(BaseModel):
+class TurnCorrectionResponse(CamelModel):
     """Response schema for a turn-level correction with all items."""
 
     id: uuid.UUID
@@ -28,4 +26,11 @@ class TurnCorrectionResponse(BaseModel):
     explanation: str
     items: list[CorrectionItemResponse]
 
-    model_config = ConfigDict(from_attributes=True)
+
+class FeedbackResponse(CamelModel):
+    """Feedback summary with corrections for a completed conversation."""
+
+    total_turns: int
+    total_corrections: int
+    total_clean: int
+    corrections: list[TurnCorrectionResponse]

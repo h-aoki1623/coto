@@ -22,9 +22,9 @@ interface HistoryDetail {
   id: string;
   topic: string;
   status: string;
-  duration_seconds: number | null;
-  started_at: string;
-  total_corrections: number;
+  durationSeconds: number | null;
+  startedAt: string;
+  totalCorrections: number;
   turns: Turn[];
   corrections: TurnCorrection[];
 }
@@ -290,7 +290,7 @@ export function HistoryDetailScreen({ navigation, route }: Props) {
   // Set header title
   useEffect(() => {
     if (detail) {
-      const headerText = formatDetailHeader(detail.started_at, detail.duration_seconds);
+      const headerText = formatDetailHeader(detail.startedAt, detail.durationSeconds);
       navigation.setOptions({
         title: '',
         headerTitle: () => (
@@ -316,7 +316,7 @@ export function HistoryDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const durationLabel = formatDuration(detail.duration_seconds);
+  const durationLabel = formatDuration(detail.durationSeconds);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>

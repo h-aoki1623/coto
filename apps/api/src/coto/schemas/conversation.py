@@ -4,10 +4,12 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from coto.schemas.base import CamelModel
 
 
-class CreateConversationRequest(BaseModel):
+class CreateConversationRequest(CamelModel):
     """Request body for starting a new conversation."""
 
     topic: Literal["sports", "business", "technology", "politics", "entertainment"] = Field(
@@ -16,7 +18,7 @@ class CreateConversationRequest(BaseModel):
     )
 
 
-class ConversationResponse(BaseModel):
+class ConversationResponse(CamelModel):
     """Standard response for a single conversation."""
 
     id: uuid.UUID
@@ -27,5 +29,3 @@ class ConversationResponse(BaseModel):
     started_at: datetime
     ended_at: datetime | None
     total_corrections: int
-
-    model_config = ConfigDict(from_attributes=True)

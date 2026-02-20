@@ -4,6 +4,7 @@ import uuid
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
@@ -109,6 +110,16 @@ def setup_middleware(app: FastAPI) -> None:
 
     # Middleware (executed in reverse registration order)
     app.add_middleware(RequestIdMiddleware)
+
+    # CORS: allow cross-origin requests from the mobile app
+    # TODO: restrict allow_origins to app domain in production
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # Exception handlers
     app.add_exception_handler(CotoError, coto_error_handler)  # type: ignore[arg-type]
