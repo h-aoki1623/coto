@@ -19,7 +19,7 @@ dev-mobile:
 	cd apps/mobile && npx expo start --dev-client
 
 dev-api:
-	cd apps/api && uvicorn src.coto.main:app --reload
+	cd apps/api && .venv/bin/uvicorn src.coto.main:app --reload
 
 # Linting
 lint: lint-mobile lint-api
@@ -28,7 +28,7 @@ lint-mobile:
 	cd apps/mobile && npx eslint src/
 
 lint-api:
-	cd apps/api && ruff check src/
+	cd apps/api && .venv/bin/ruff check src/
 
 # Testing
 test: test-mobile test-api
@@ -37,11 +37,11 @@ test-mobile:
 	cd apps/mobile && npx jest
 
 test-api:
-	cd apps/api && pytest
+	cd apps/api && .venv/bin/pytest
 
 # Database Migrations
 migrate:
-	cd apps/api && alembic upgrade head
+	cd apps/api && .venv/bin/alembic upgrade head
 
 migrate-new:
-	cd apps/api && alembic revision --autogenerate -m "$(MSG)"
+	cd apps/api && .venv/bin/alembic revision --autogenerate -m "$(MSG)"
