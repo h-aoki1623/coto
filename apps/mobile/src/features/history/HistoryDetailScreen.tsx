@@ -13,21 +13,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { apiClient } from '@/api/client';
 import { Colors } from '@/constants/colors';
 import type { RootStackParamList } from '@/navigation/types';
-import type { Turn, TurnCorrection, CorrectionItem } from '@/types/conversation';
+import type { HistoryDetailResponse, Turn, TurnCorrection, CorrectionItem } from '@/types/conversation';
 import { SegmentedControl } from './components/SegmentedControl';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HistoryDetail'>;
-
-interface HistoryDetail {
-  id: string;
-  topic: string;
-  status: string;
-  durationSeconds: number | null;
-  startedAt: string;
-  totalCorrections: number;
-  turns: Turn[];
-  corrections: TurnCorrection[];
-}
 
 type LoadingState = 'loading' | 'loaded' | 'error';
 const TABS = ['フィードバック', 'チャット履歴'] as const;
@@ -253,14 +242,14 @@ function ChatHistoryTab({
 
 export function HistoryDetailScreen({ navigation, route }: Props) {
   const { conversationId } = route.params;
-  const [detail, setDetail] = useState<HistoryDetail | null>(null);
+  const [detail, setDetail] = useState<HistoryDetailResponse | null>(null);
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [selectedTab, setSelectedTab] = useState(0);
 
   const fetchDetail = useCallback(async () => {
     setLoadingState('loading');
     try {
-      const result = await apiClient.get<HistoryDetail>(
+      const result = await apiClient.get<HistoryDetailResponse>(
         `/api/history/${conversationId}`,
       );
 
@@ -317,6 +306,9 @@ export function HistoryDetailScreen({ navigation, route }: Props) {
   }
 
   const durationLabel = formatDuration(detail.durationSeconds);
+  // Cast: backend guarantees role/correctionStatus/type are valid union values
+  const turns = (detail.turns ?? []) as Turn[];
+  const corrections = (detail.corrections ?? []) as TurnCorrection[];
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -326,11 +318,11 @@ export function HistoryDetailScreen({ navigation, route }: Props) {
         onSelect={setSelectedTab}
       />
       {selectedTab === 0 ? (
-        <FeedbackTab corrections={detail.corrections} />
+        <FeedbackTab corrections={corrections} />
       ) : (
         <ChatHistoryTab
-          turns={detail.turns}
-          corrections={detail.corrections}
+          turns={turns}
+          corrections={corrections}
           durationLabel={durationLabel}
         />
       )}

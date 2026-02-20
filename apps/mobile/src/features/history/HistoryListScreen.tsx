@@ -17,28 +17,13 @@ import { apiClient } from '@/api/client';
 import { Colors } from '@/constants/colors';
 import { findTopic } from '@/constants/topics';
 import type { RootStackParamList } from '@/navigation/types';
+import type { HistoryListItem, HistoryListResponse } from '@/types/conversation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HistoryList'>;
 
-interface HistoryItem {
-  id: string;
-  topic: string;
-  status: string;
-  durationSeconds: number | null;
-  startedAt: string;
-  totalCorrections: number;
-}
-
-interface HistoryListResponse {
-  items: HistoryItem[];
-  total: number;
-  page: number;
-  perPage: number;
-}
-
 interface SectionData {
   title: string;
-  data: HistoryItem[];
+  data: HistoryListItem[];
 }
 
 const PER_PAGE = 20;
@@ -75,8 +60,8 @@ function getSectionTitle(isoString: string): string {
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
-function groupByDate(items: HistoryItem[]): SectionData[] {
-  const sections: Map<string, HistoryItem[]> = new Map();
+function groupByDate(items: HistoryListItem[]): SectionData[] {
+  const sections: Map<string, HistoryListItem[]> = new Map();
 
   for (const item of items) {
     const title = getSectionTitle(item.startedAt);
@@ -97,7 +82,7 @@ function groupByDate(items: HistoryItem[]): SectionData[] {
 // -- Row Component --
 
 interface HistoryRowProps {
-  item: HistoryItem;
+  item: HistoryListItem;
   onPress: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -210,7 +195,7 @@ function HistoryRow({ item, onPress, onDelete }: HistoryRowProps) {
 // -- Main Screen --
 
 export function HistoryListScreen({ navigation }: Props) {
-  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [items, setItems] = useState<HistoryListItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);

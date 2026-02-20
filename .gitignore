@@ -44,6 +44,9 @@ apps/mobile/android/
 # === Expo ===
 apps/mobile/.expo/
 
+# === Generated (intermediate artifacts) ===
+apps/api/openapi.json
+
 # === Build artifacts ===
 *.tsbuildinfo
 

@@ -14,16 +14,9 @@ import { apiClient } from '@/api/client';
 import { Colors } from '@/constants/colors';
 import { useConversationStore } from '@/stores/conversation-store';
 import type { RootStackParamList } from '@/navigation/types';
-import type { TurnCorrection, CorrectionItem } from '@/types/conversation';
+import type { FeedbackResponse, TurnCorrection, CorrectionItem } from '@/types/conversation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Feedback'>;
-
-interface FeedbackResponse {
-  totalTurns: number;
-  totalCorrections: number;
-  totalClean: number;
-  corrections: TurnCorrection[];
-}
 
 type LoadingState = 'loading' | 'loaded' | 'error';
 
@@ -153,7 +146,8 @@ export function FeedbackScreen({ navigation, route }: Props) {
       }
 
       if (result.data) {
-        setCorrections(result.data.corrections ?? []);
+        // Cast: backend guarantees correction item types are valid union values
+        setCorrections((result.data.corrections ?? []) as TurnCorrection[]);
         setStats({
           totalTurns: result.data.totalTurns ?? 0,
           totalCorrections: result.data.totalCorrections ?? 0,

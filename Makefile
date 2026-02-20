@@ -1,4 +1,4 @@
-.PHONY: dev-mobile dev-api lint lint-mobile lint-api test test-mobile test-api migrate migrate-new docker-up docker-down docker-reset
+.PHONY: dev-mobile dev-api lint lint-mobile lint-api test test-mobile test-api migrate migrate-new docker-up docker-down docker-reset generate-api-types
 
 # Infrastructure
 docker-up:
@@ -45,3 +45,8 @@ migrate:
 
 migrate-new:
 	cd apps/api && .venv/bin/alembic revision --autogenerate -m "$(MSG)"
+
+# OpenAPI TypeScript type generation
+generate-api-types:
+	cd apps/api && .venv/bin/python scripts/export_openapi.py openapi.json
+	cd apps/mobile && npx openapi-typescript ../api/openapi.json -o src/types/generated/api.ts

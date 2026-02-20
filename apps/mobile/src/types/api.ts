@@ -1,3 +1,11 @@
+/**
+ * API client types.
+ *
+ * ApiResponse is the client-side envelope (not from OpenAPI).
+ * TurnEvent types describe SSE streaming events (not in the OpenAPI spec
+ * because SSE is not modelled by OpenAPI).
+ */
+
 export interface ApiResponse<T> {
   data?: T;
   error?: {
@@ -5,6 +13,8 @@ export interface ApiResponse<T> {
     message: string;
   };
 }
+
+// -- SSE Turn Events (not generated — SSE is outside OpenAPI scope) --------
 
 export type TurnEvent =
   | { type: 'stt_result'; data: { text: string } }

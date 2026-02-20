@@ -1,28 +1,37 @@
-export interface Turn {
-  id: string;
-  conversationId: string;
+/**
+ * Conversation domain types derived from OpenAPI-generated schemas.
+ *
+ * These re-export and narrow the auto-generated types so the rest of
+ * the codebase can import from a stable module rather than reaching
+ * into the generated file directly.
+ */
+import type { components } from './generated/api';
+
+// -- Direct re-exports from OpenAPI schemas --------------------------------
+
+export type ConversationResponse = components['schemas']['ConversationResponse'];
+export type HistoryListItem = components['schemas']['HistoryListItem'];
+export type HistoryListResponse = components['schemas']['HistoryListResponse'];
+export type HistoryDetailResponse = components['schemas']['HistoryDetailResponse'];
+export type FeedbackResponse = components['schemas']['FeedbackResponse'];
+
+// -- Narrowed types (OpenAPI uses plain `string`; we add union literals) ----
+
+type TurnResponseRaw = components['schemas']['TurnResponse'];
+
+export interface Turn extends Omit<TurnResponseRaw, 'role' | 'correctionStatus'> {
   role: 'user' | 'ai';
-  text: string;
-  audioUrl: string | null;
-  sequence: number;
   correctionStatus: 'none' | 'pending' | 'clean' | 'has_corrections';
-  createdAt: string;
 }
 
-export interface CorrectionItem {
-  id: string;
-  original: string;
-  corrected: string;
-  originalSentence: string;
-  correctedSentence: string;
+type CorrectionItemRaw = components['schemas']['CorrectionItemResponse'];
+
+export interface CorrectionItem extends Omit<CorrectionItemRaw, 'type'> {
   type: 'grammar' | 'expression' | 'vocabulary';
-  explanation: string;
 }
 
-export interface TurnCorrection {
-  id: string;
-  turnId: string;
-  correctedText: string;
-  explanation: string;
+type TurnCorrectionRaw = components['schemas']['TurnCorrectionResponse'];
+
+export interface TurnCorrection extends Omit<TurnCorrectionRaw, 'items'> {
   items: CorrectionItem[];
 }
