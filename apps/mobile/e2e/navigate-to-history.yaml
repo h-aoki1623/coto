@@ -8,15 +8,21 @@ appId: com.coto.app
 ---
 # Launch the application
 - launchApp
-- waitForAnimationToEnd
+
+# Wait for the Home screen to fully render.
+# On Android emulators, the Expo dev client cold start can be slow.
+- extendedWaitUntil:
+    visible:
+      text: "こんにちは"
+    timeout: 30000
 
 # Verify we start on the Home screen
 - assertVisible:
     text: "こんにちは"
 
-# Tap the history button using its accessibility label
+# Tap the history button using its testID
 - tapOn:
-    id: "View conversation history"
+    id: "history-button"
 
 # Wait for the History List screen to load
 - waitForAnimationToEnd
@@ -28,11 +34,17 @@ appId: com.coto.app
 # Capture evidence of the history screen
 - takeScreenshot: "history-list-screen"
 
-# Navigate back to Home screen using the back button
-- back
+# Navigate back to Home screen by tapping the React Navigation back button.
+# On iOS, Maestro's `back` command does not trigger React Navigation's back.
+- tapOn:
+    point: "7%,6%"
 
 # Wait for transition back
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "こんにちは"
+    timeout: 5000
 
 # Verify we returned to the Home screen
 - assertVisible:

@@ -49,6 +49,7 @@ function TalkHeader({
         onPress={onEnd}
         disabled={isEnding}
         style={styles.endButton}
+        testID="end-conversation"
         accessibilityRole="button"
         accessibilityLabel="End conversation"
         accessibilityHint="Ends the conversation and shows feedback"
@@ -84,6 +85,7 @@ function CompletionFooter({
             pressed && styles.feedbackButtonPressed,
           ]}
           onPress={onViewFeedback}
+          testID="view-feedback"
           accessibilityRole="button"
           accessibilityLabel="View feedback"
         >

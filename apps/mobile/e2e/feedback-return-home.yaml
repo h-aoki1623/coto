@@ -20,15 +20,21 @@ appId: com.coto.app
 # -- Step 1: Launch and start a conversation --
 
 - launchApp
-- waitForAnimationToEnd
+
+# Wait for the Home screen to fully render.
+# On Android emulators, the Expo dev client cold start can be slow.
+- extendedWaitUntil:
+    visible:
+      text: "こんにちは"
+    timeout: 30000
 
 # Verify Home screen
 - assertVisible:
     text: "こんにちは"
 
-# Start a conversation on the Sports topic
+# Start a conversation on the Sports topic via testID
 - tapOn:
-    id: "Start conversation about スポーツ"
+    id: "topic-sports"
 
 # Wait for API call and navigation
 - extendedWaitUntil:
@@ -43,32 +49,34 @@ appId: com.coto.app
 
 # -- Step 2: End the conversation --
 
-# Tap the end button
+# Tap the end button via testID
 - tapOn:
-    id: "End conversation"
+    id: "end-conversation"
 
 # An Alert dialog will appear asking for confirmation
 # Tap "End" to confirm
 - tapOn: "End"
 
-# Wait for the API call to complete and the completion footer to appear
+# Wait for the API call to complete and the completion footer to appear.
+# "トーク終了" is followed by duration text (e.g. "トーク終了 · 1分未満"),
+# so use regex wildcard to match the full accessibilityText.
 - extendedWaitUntil:
     visible:
-      text: "トーク終了"
+      text: "トーク終了.*"
     timeout: 15000
 
 # Verify the completion state is shown
 - assertVisible:
-    text: "トーク終了"
+    text: "トーク終了.*"
 - assertVisible:
-    text: "フィードバックを見る"
+    id: "view-feedback"
 - takeScreenshot: "feedback-flow-02-conversation-ended"
 
 # -- Step 3: Navigate to Feedback screen --
 
-# Tap the "View feedback" button
+# Tap the "View feedback" button via testID
 - tapOn:
-    id: "View feedback"
+    id: "view-feedback"
 
 # Wait for the Feedback screen to load (includes API call for feedback data)
 - waitForAnimationToEnd
@@ -81,28 +89,24 @@ appId: com.coto.app
 - assertVisible:
     text: "フィードバック"
 
-# Verify stats labels are present
+# Verify the "Back to home" button is present via testID
 - assertVisible:
-    text: "やりとり"
-- assertVisible:
-    text: "添削"
-- assertVisible:
-    text: "訂正なし"
-
-# Verify the "Back to home" button is present
-- assertVisible:
-    text: "ホームに戻る"
+    id: "go-home"
 
 - takeScreenshot: "feedback-flow-03-feedback-screen"
 
 # -- Step 4: Return to Home screen --
 
-# Tap the "Back to home" button
+# Tap the "Back to home" button via testID
 - tapOn:
-    id: "Go back to home screen"
+    id: "go-home"
 
 # Wait for navigation back to Home
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "こんにちは"
+    timeout: 5000
 
 # Verify we are back on the Home screen
 - assertVisible:

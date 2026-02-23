@@ -10,15 +10,21 @@ appId: com.coto.app
 ---
 # Launch the application
 - launchApp
-- waitForAnimationToEnd
+
+# Wait for the Home screen to fully render.
+# On Android emulators, the Expo dev client cold start can be slow.
+- extendedWaitUntil:
+    visible:
+      text: "こんにちは"
+    timeout: 30000
 
 # Verify we are on the Home screen
 - assertVisible:
     text: "こんにちは"
 
-# Tap the Sports topic card using its accessibility label
+# Tap the Sports topic card using its testID
 - tapOn:
-    id: "Start conversation about スポーツ"
+    id: "topic-sports"
 
 # Wait for the API call and navigation transition.
 # The loading indicator will show briefly on the card.
@@ -41,9 +47,9 @@ appId: com.coto.app
     text: "Ready to Practice!"
     optional: true
 
-# Verify the end conversation button is present
+# Verify the end conversation button is present via testID
 - assertVisible:
-    id: "End conversation"
+    id: "end-conversation"
     optional: true
 
 # Capture evidence of the Talk screen

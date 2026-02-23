@@ -2,30 +2,36 @@
 # Verifies all 5 topic cards are visible on the Home screen and the
 # history button is accessible. Does NOT tap any cards.
 #
-# Expected result: All topic labels and the history button are rendered.
+# Expected result: All topic cards and the history button are rendered.
+# Note: Uses testID-based selectors (`id`) because Maestro's text matching
+# cannot reliably find text inside FlatList items on iOS.
 appId: com.coto.app
 ---
 # Launch the application
 - launchApp
 
-# Wait for the Home screen to fully render
-- waitForAnimationToEnd
+# Wait for the Home screen to fully render.
+# On Android emulators, the Expo dev client cold start can be slow.
+- extendedWaitUntil:
+    visible:
+      id: "topic-sports"
+    timeout: 30000
 
-# Verify all 5 topic card labels are visible
+# Verify all 5 topic cards are visible via testID
 - assertVisible:
-    text: "スポーツ"
+    id: "topic-sports"
 - assertVisible:
-    text: "ビジネス"
+    id: "topic-business"
 - assertVisible:
-    text: "政治"
+    id: "topic-politics"
 - assertVisible:
-    text: "テクノロジー"
+    id: "topic-technology"
 - assertVisible:
-    text: "エンタメ"
+    id: "topic-entertainment"
 
-# Verify the history button is present (accessibility label)
+# Verify the history button is present via testID
 - assertVisible:
-    id: "View conversation history"
+    id: "history-button"
 
 # Verify the TOPICS section label
 - assertVisible: "TOPICS"

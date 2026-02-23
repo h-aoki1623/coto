@@ -8,8 +8,12 @@ appId: com.coto.app
 # Launch the application
 - launchApp
 
-# Wait for the Home screen to fully render
-- waitForAnimationToEnd
+# Wait for the Home screen to fully render.
+# On Android emulators, the Expo dev client cold start can be slow.
+- extendedWaitUntil:
+    visible:
+      text: "こんにちは"
+    timeout: 30000
 
 # Verify the CO logo text is present in the header
 - assertVisible: "CO"

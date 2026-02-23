@@ -237,6 +237,7 @@ export function FeedbackScreen({ navigation, route }: Props) {
             pressed && styles.homeButtonPressed,
           ]}
           onPress={handleBackToHome}
+          testID="go-home"
           accessibilityRole="button"
           accessibilityLabel="Go back to home screen"
         >

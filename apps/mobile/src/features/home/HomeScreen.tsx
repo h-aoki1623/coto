@@ -88,6 +88,7 @@ function TopicCard({ topic, isLoading, isDisabled, onPress }: TopicCardProps) {
       ]}
       onPress={() => onPress(topic.key)}
       disabled={isDisabled}
+      testID={`topic-${topic.key}`}
       accessibilityRole="button"
       accessibilityLabel={`Start conversation about ${topic.label}`}
       accessibilityHint="Creates a new conversation and opens the talk screen"
@@ -209,6 +210,7 @@ export function HomeScreen({ navigation }: Props) {
           <Pressable
             onPress={handleHistoryPress}
             style={styles.historyButton}
+            testID="history-button"
             accessibilityRole="button"
             accessibilityLabel="View conversation history"
             accessibilityHint="Opens the list of past conversations"
