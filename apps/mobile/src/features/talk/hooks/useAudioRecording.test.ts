@@ -1,41 +1,51 @@
 import { buildAudioFormData } from './useAudioRecording';
 
+// Mock expo-file-system/next File class
+const mockBlob = new Blob(['test'], { type: 'audio/mp4' });
+const mockBlobFn = jest.fn().mockReturnValue(mockBlob);
+
+jest.mock('expo-file-system/next', () => ({
+  File: jest.fn().mockImplementation((uri: string) => ({
+    blob: mockBlobFn,
+    name: uri.split('/').pop() ?? 'audio.m4a',
+  })),
+}));
+
 describe('buildAudioFormData', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('creates a FormData with an audio field', () => {
     const formData = buildAudioFormData('file:///path/to/audio.m4a');
 
-    // FormData.append should have been called
     expect(formData).toBeInstanceOf(FormData);
   });
 
-  it('appends the audio field with correct structure', () => {
+  it('creates an ExpoFile from the given URI', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { File: MockFile } = require('expo-file-system/next');
+
+    buildAudioFormData('file:///recordings/test.m4a');
+
+    expect(MockFile).toHaveBeenCalledWith('file:///recordings/test.m4a');
+  });
+
+  it('appends the blob with the file name', () => {
     const appendSpy = jest.spyOn(FormData.prototype, 'append');
 
     buildAudioFormData('file:///recordings/test.m4a');
 
-    expect(appendSpy).toHaveBeenCalledWith('audio', expect.objectContaining({
-      uri: 'file:///recordings/test.m4a',
-      type: 'audio/mp4',
-    }));
+    expect(appendSpy).toHaveBeenCalledWith(
+      'audio',
+      mockBlob,
+      'test.m4a',
+    );
 
     appendSpy.mockRestore();
   });
 
-  it('sets the file name with correct extension', () => {
-    const appendSpy = jest.spyOn(FormData.prototype, 'append');
-
-    buildAudioFormData('file:///test.m4a');
-
-    const appendedValue = appendSpy.mock.calls[0][1] as unknown as {
-      name: string;
-    };
-    expect(appendedValue.name).toMatch(/audio\.m4a$/);
-
-    appendSpy.mockRestore();
-  });
-
-  it('handles different URI formats', () => {
-    // Should not throw for any valid URI string
+  it('handles different URI formats without error', () => {
     expect(() => buildAudioFormData('file:///a.m4a')).not.toThrow();
     expect(() =>
       buildAudioFormData('file:///long/path/to/recording.m4a'),

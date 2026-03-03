@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import { Asset } from 'expo-asset';
+import { File as ExpoFile } from 'expo-file-system/next';
 import { useAudioStore } from '@/stores/audio-store';
 import { isE2eMode } from '@/config/e2e';
 import { t } from '@/i18n';
@@ -156,14 +157,16 @@ export function useAudioRecording(): UseAudioRecordingReturn {
 
 /**
  * Build a FormData object from a recording file URI.
- * React Native's FormData accepts an object with uri/type/name for file uploads.
+ *
+ * Uses expo-file-system/next's File class which produces a native FileBlob
+ * compatible with expo/fetch. The React Native {uri, type, name} pattern
+ * only works with native fetch but fails with expo/fetch, and JS-layer
+ * Blob objects (via atob + Uint8Array) are not serializable by expo/fetch's
+ * native implementation either.
  */
 export function buildAudioFormData(uri: string): FormData {
+  const file = new ExpoFile(uri);
   const formData = new FormData();
-  formData.append('audio', {
-    uri,
-    type: 'audio/mp4',
-    name: 'audio.m4a',
-  } as unknown as Blob);
+  formData.append('audio', file.blob(), file.name);
   return formData;
 }
