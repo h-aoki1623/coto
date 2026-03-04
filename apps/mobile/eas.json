@@ -19,7 +19,7 @@
       "distribution": "internal",
       "env": {
         "APP_ENV": "staging",
-        "API_BASE_URL": "https://coto-api-staging-xxxxx-an.a.run.app"
+        "API_BASE_URL": "https://coto-api-ywj6a2x3uq-an.a.run.app"
       },
       "ios": {
         "enterpriseProvisioning": "adhoc"
@@ -29,7 +29,7 @@
       "autoIncrement": true,
       "env": {
         "APP_ENV": "production",
-        "API_BASE_URL": "https://coto-api-xxxxx-an.a.run.app"
+        "API_BASE_URL": "https://coto-api-ywj6a2x3uq-an.a.run.app"
       }
     }
   },
