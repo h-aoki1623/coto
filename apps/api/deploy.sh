@@ -41,7 +41,7 @@ echo ""
 
 # --- Step 1: Build and push Docker image ---
 echo ">>> Building Docker image..."
-docker build -t "${IMAGE}" -f apps/api/Dockerfile apps/api/
+docker build --platform linux/amd64 -t "${IMAGE}" -f apps/api/Dockerfile apps/api/
 
 echo ">>> Pushing to Artifact Registry..."
 docker push "${IMAGE}"
