@@ -141,7 +141,7 @@ deactivate
 ```bash
 # Build image
 IMAGE="asia-northeast1-docker.pkg.dev/coto-app-prod/coto/coto-api:v0.1.0"
-docker build -t "${IMAGE}" -f apps/api/Dockerfile apps/api/
+docker build --platform linux/amd64 -t "${IMAGE}" -f apps/api/Dockerfile apps/api/
 docker push "${IMAGE}"
 
 # Deploy
