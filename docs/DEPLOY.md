@@ -15,8 +15,8 @@ This guide covers deploying Coyo to production: API on Cloud Run, mobile apps vi
 
 ```bash
 # Create project
-gcloud projects create coyo-app-prod --name="Coyo Production"
-gcloud config set project coyo-app-prod
+gcloud projects create <your-project-id> --name="Coyo Production"
+gcloud config set project <your-project-id>
 
 # Enable required APIs
 gcloud services enable \
@@ -26,7 +26,7 @@ gcloud services enable \
   storage.googleapis.com
 
 # Create Artifact Registry repository
-gcloud artifacts repositories create coyo \
+gcloud artifacts repositories create <your-repo-name> \
   --repository-format=docker \
   --location=asia-northeast1
 
@@ -53,7 +53,7 @@ gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 
 ```bash
 # Create bucket with auto-delete lifecycle
-gcloud storage buckets create gs://coyo-audio-prod \
+gcloud storage buckets create gs://<your-bucket-name> \
   --location=asia-northeast1 \
   --uniform-bucket-level-access
 
@@ -70,7 +70,7 @@ cat > /tmp/lifecycle.json << 'EOF'
   ]
 }
 EOF
-gcloud storage buckets update gs://coyo-audio-prod --lifecycle-file=/tmp/lifecycle.json
+gcloud storage buckets update gs://<your-bucket-name> --lifecycle-file=/tmp/lifecycle.json
 ```
 
 ### 1.5 OpenAI API Key
@@ -92,7 +92,7 @@ echo -n "rediss://..." | gcloud secrets create redis-url --data-file=-
 echo -n "sk-..." | gcloud secrets create openai-api-key --data-file=-
 
 # Grant Cloud Run access to secrets
-PROJECT_NUMBER=$(gcloud projects describe coyo-app-prod --format='value(projectNumber)')
+PROJECT_NUMBER=$(gcloud projects describe <your-project-id> --format='value(projectNumber)')
 gcloud secrets add-iam-policy-binding database-url \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
@@ -140,12 +140,12 @@ deactivate
 
 ```bash
 # Build image
-IMAGE="asia-northeast1-docker.pkg.dev/coyo-app-prod/coyo/coyo-api:v0.1.0"
+IMAGE="asia-northeast1-docker.pkg.dev/<your-project-id>/<your-repo-name>/coyo-api:v0.1.0"
 docker build --platform linux/amd64 -t "${IMAGE}" -f apps/api/Dockerfile apps/api/
 docker push "${IMAGE}"
 
 # Deploy
-gcloud run deploy coyo-api \
+gcloud run deploy <your-service-name> \
   --image "${IMAGE}" \
   --region asia-northeast1 \
   --port 8080 \
@@ -158,7 +158,7 @@ gcloud run deploy coyo-api \
   --execution-environment gen2 \
   --no-cpu-throttling \
   --allow-unauthenticated \
-  --set-env-vars "ENVIRONMENT=production,GCS_BUCKET_NAME=coyo-audio-prod,RATE_LIMIT_PER_MINUTE=30" \
+  --set-env-vars "ENVIRONMENT=production,GCS_BUCKET_NAME=<your-bucket-name>,RATE_LIMIT_PER_MINUTE=30" \
   --set-secrets "DATABASE_URL=database-url:latest,REDIS_URL=redis-url:latest,OPENAI_API_KEY=openai-api-key:latest"
 ```
 
@@ -166,7 +166,7 @@ gcloud run deploy coyo-api \
 
 ```bash
 # Get service URL
-URL=$(gcloud run services describe coyo-api --region asia-northeast1 --format 'value(status.url)')
+URL=$(gcloud run services describe <your-service-name> --region asia-northeast1 --format 'value(status.url)')
 
 # Health check
 curl "${URL}/health"
@@ -178,7 +178,7 @@ curl "${URL}/health"
 Update the `CORS_ALLOWED_ORIGINS` environment variable if needed:
 
 ```bash
-gcloud run services update coyo-api \
+gcloud run services update <your-service-name> \
   --region asia-northeast1 \
   --set-env-vars "CORS_ALLOWED_ORIGINS=[\"${URL}\"]"
 ```
@@ -281,7 +281,7 @@ npx eas submit --platform android --profile production
 Set up WIF to allow GitHub Actions to deploy to Cloud Run without service account keys:
 
 ```bash
-PROJECT_ID="coyo-app-prod"
+PROJECT_ID="<your-project-id>"
 PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format='value(projectNumber)')
 
 # Create Workload Identity Pool
@@ -297,7 +297,7 @@ gcloud iam workload-identity-pools providers create-oidc "github-actions" \
   --workload-identity-pool="github" \
   --display-name="GitHub Actions" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-  --attribute-condition="assertion.repository=='h-aoki1623/coyo'" \
+  --attribute-condition="assertion.repository=='<owner>/<repo>'" \
   --issuer-uri="https://token.actions.githubusercontent.com"
 
 # Create service account for deployments
@@ -313,7 +313,7 @@ for ROLE in run.admin artifactregistry.writer secretmanager.secretAccessor iam.s
 done
 
 # Allow GitHub to impersonate the service account
-REPO="h-aoki1623/coyo"  # Replace with your repo
+REPO="<owner>/<repo>"  # Replace with your repo
 gcloud iam service-accounts add-iam-policy-binding ${SA_EMAIL} \
   --project="${PROJECT_ID}" \
   --role="roles/iam.workloadIdentityUser" \
@@ -327,17 +327,18 @@ Add these secrets in GitHub Settings > Secrets and variables > Actions:
 | Secret | Value |
 |--------|-------|
 | `WIF_PROVIDER` | `projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github/providers/github-actions` |
-| `WIF_SERVICE_ACCOUNT` | `github-actions-deploy@coyo-app-prod.iam.gserviceaccount.com` |
+| `WIF_SERVICE_ACCOUNT` | `github-actions-deploy@<your-project-id>.iam.gserviceaccount.com` |
 | `DATABASE_URL` | Production database URL (for migrations) |
 
 Add these variables in GitHub Settings > Secrets and variables > Actions > Variables:
 
 | Variable | Value |
 |----------|-------|
-| `GCP_PROJECT_ID` | `coyo-app-prod` |
-| `CLOUD_RUN_REGION` | `asia-northeast1` |
-| `CLOUD_RUN_SERVICE` | `coyo-api` |
-| `GCS_BUCKET_NAME` | `coyo-audio-prod` |
+| `GCP_PROJECT_ID` | Your GCP project ID |
+| `CLOUD_RUN_REGION` | Your preferred region (e.g., `asia-northeast1`) |
+| `CLOUD_RUN_SERVICE` | Your Cloud Run service name |
+| `GCS_BUCKET_NAME` | Your GCS bucket name |
+| `ARTIFACT_REPO` | Your Artifact Registry repository name |
 
 ## Verification Checklist
 
@@ -365,11 +366,11 @@ Add these variables in GitHub Settings > Secrets and variables > Actions > Varia
 
 ```bash
 # List revisions
-gcloud run revisions list --service coyo-api --region asia-northeast1
+gcloud run revisions list --service <your-service-name> --region <your-region>
 
 # Rollback to previous revision
-gcloud run services update-traffic coyo-api \
-  --region asia-northeast1 \
+gcloud run services update-traffic <your-service-name> \
+  --region <your-region> \
   --to-revisions PREVIOUS_REVISION=100
 ```
 
