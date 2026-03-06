@@ -26,7 +26,7 @@ gcloud services enable \
   storage.googleapis.com
 
 # Create Artifact Registry repository
-gcloud artifacts repositories create coyo \
+gcloud artifacts repositories create <your-repo-name> \
   --repository-format=docker \
   --location=asia-northeast1
 
@@ -140,12 +140,12 @@ deactivate
 
 ```bash
 # Build image
-IMAGE="asia-northeast1-docker.pkg.dev/<your-project-id>/coyo/coyo-api:v0.1.0"
+IMAGE="asia-northeast1-docker.pkg.dev/<your-project-id>/<your-repo-name>/coyo-api:v0.1.0"
 docker build --platform linux/amd64 -t "${IMAGE}" -f apps/api/Dockerfile apps/api/
 docker push "${IMAGE}"
 
 # Deploy
-gcloud run deploy coyo-api \
+gcloud run deploy <your-service-name> \
   --image "${IMAGE}" \
   --region asia-northeast1 \
   --port 8080 \
@@ -166,7 +166,7 @@ gcloud run deploy coyo-api \
 
 ```bash
 # Get service URL
-URL=$(gcloud run services describe coyo-api --region asia-northeast1 --format 'value(status.url)')
+URL=$(gcloud run services describe <your-service-name> --region asia-northeast1 --format 'value(status.url)')
 
 # Health check
 curl "${URL}/health"
@@ -178,7 +178,7 @@ curl "${URL}/health"
 Update the `CORS_ALLOWED_ORIGINS` environment variable if needed:
 
 ```bash
-gcloud run services update coyo-api \
+gcloud run services update <your-service-name> \
   --region asia-northeast1 \
   --set-env-vars "CORS_ALLOWED_ORIGINS=[\"${URL}\"]"
 ```
@@ -334,10 +334,11 @@ Add these variables in GitHub Settings > Secrets and variables > Actions > Varia
 
 | Variable | Value |
 |----------|-------|
-| `GCP_PROJECT_ID` | `<your-project-id>` |
-| `CLOUD_RUN_REGION` | `asia-northeast1` |
-| `CLOUD_RUN_SERVICE` | `coyo-api` |
-| `GCS_BUCKET_NAME` | `<your-bucket-name>` |
+| `GCP_PROJECT_ID` | Your GCP project ID |
+| `CLOUD_RUN_REGION` | Your preferred region (e.g., `asia-northeast1`) |
+| `CLOUD_RUN_SERVICE` | Your Cloud Run service name |
+| `GCS_BUCKET_NAME` | Your GCS bucket name |
+| `ARTIFACT_REPO` | Your Artifact Registry repository name |
 
 ## Verification Checklist
 
@@ -365,11 +366,11 @@ Add these variables in GitHub Settings > Secrets and variables > Actions > Varia
 
 ```bash
 # List revisions
-gcloud run revisions list --service coyo-api --region asia-northeast1
+gcloud run revisions list --service <your-service-name> --region <your-region>
 
 # Rollback to previous revision
-gcloud run services update-traffic coyo-api \
-  --region asia-northeast1 \
+gcloud run services update-traffic <your-service-name> \
+  --region <your-region> \
   --to-revisions PREVIOUS_REVISION=100
 ```
 
